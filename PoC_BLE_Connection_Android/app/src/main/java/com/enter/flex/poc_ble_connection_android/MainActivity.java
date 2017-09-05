@@ -15,6 +15,7 @@ import android.util.Log;
 import android.bluetooth.BluetoothAdapter;
 import android.view.LayoutInflater;
 import android.widget.BaseAdapter;
+import android.widget.ListView;
 import android.widget.TextView;
 
 import java.util.ArrayList;
@@ -28,6 +29,7 @@ public class MainActivity extends AppCompatActivity {
     private Handler mHandler;
     private static final long SCAN_PERIOD = 10000;
     int MY_PERMISSIONS_REQUEST_READ_CONTACTS;
+    private ListView listView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,15 +37,11 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         mHandler = new Handler();
 
-
-
+        listView = (ListView)findViewById(R.id.listView);
 
         ActivityCompat.requestPermissions(this,
                 new String[]{Manifest.permission.ACCESS_COARSE_LOCATION,Manifest.permission.ACCESS_FINE_LOCATION},
                 1);
-
-
-
 
         // Initializes Bluetooth adapter.
         final BluetoothManager bluetoothManager =
