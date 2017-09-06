@@ -1,11 +1,18 @@
 package com.enter.flex.poc_ble_connection_android;
 
 import android.Manifest;
+import android.app.Activity;
+import android.bluetooth.BluetoothClass;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothGatt;
+import android.bluetooth.BluetoothGattCallback;
+import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothManager;
+import android.bluetooth.BluetoothProfile;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Handler;
+import android.os.ParcelUuid;
 import android.os.RemoteException;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -14,22 +21,30 @@ import android.os.Bundle;
 import android.util.Log;
 import android.bluetooth.BluetoothAdapter;
 import android.view.LayoutInflater;
+import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.BaseAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 
 import java.util.ArrayList;
+import java.util.UUID;
 
 
 public class MainActivity extends AppCompatActivity {
 
-    public static final String TAG = "BeaconsEverywhere";
+    public static final String TAG = "Beacon";
     private BluetoothAdapter mBluetoothAdapter;
     private boolean mScanning;
     private Handler mHandler;
     private static final long SCAN_PERIOD = 10000;
     int MY_PERMISSIONS_REQUEST_READ_CONTACTS;
     private ListView listView;
+    private ArrayList<String> listItems;
+    private ArrayAdapter<String> adapter;
+    private BluetoothGatt mBluetoothGatt;
+    private ArrayList<BluetoothDevice> bluetoothDevices;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,7 +52,23 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         mHandler = new Handler();
 
+        bluetoothDevices = new ArrayList<BluetoothDevice>();
+        listItems = new ArrayList<String>();
+        adapter=new ArrayAdapter<String>(this,
+                android.R.layout.simple_list_item_1,
+                listItems);
+
         listView = (ListView)findViewById(R.id.listView);
+        listView.setAdapter(adapter);
+
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener(){
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                BluetoothDevice device = bluetoothDevices.get(position);
+                openBeacon(device);
+
+            }
+        });
 
         ActivityCompat.requestPermissions(this,
                 new String[]{Manifest.permission.ACCESS_COARSE_LOCATION,Manifest.permission.ACCESS_FINE_LOCATION},
@@ -47,10 +78,7 @@ public class MainActivity extends AppCompatActivity {
         final BluetoothManager bluetoothManager =
                 (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
         mBluetoothAdapter = bluetoothManager.getAdapter();
-//
-//
-//        int permissionCheck = ContextCompat.checkSelfPermission(this,
-//                Manifest.permission.ACCESS_COARSE_LOCATION);
+
        scanLeDevice(true);
     }
 
@@ -73,7 +101,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-//    private LeDeviceListAdapter mLeDeviceListAdapter;
+
     // Device scan callback.
     private BluetoothAdapter.LeScanCallback mLeScanCallback =
             new BluetoothAdapter.LeScanCallback() {
@@ -83,20 +111,76 @@ public class MainActivity extends AppCompatActivity {
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
+
 //                            mLeDeviceListAdapter.addDevice(device);
 //                            mLeDeviceListAdapter.notifyDataSetChanged();
-
-                            Log.i(TAG, "hallo");
-
-
+                            if(!bluetoothDevices.contains(device)) {
+                                String name;
+                                if(device.getName() == null){
+                                    name = "N/A";
+                                }
+                                else name = device.getName();
+                                bluetoothDevices.add(device);
+                                listItems.add(name);
+                                adapter.notifyDataSetChanged();
+                                Log.i(TAG, "Beacon noticed!");
+                            }
                         }
                     });
                 }
             };
+
+
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
     }
 
+    private void openBeacon(BluetoothDevice device){
+        mBluetoothGatt = device.connectGatt(this, false, mGattCallback);
+
+        mBluetoothGatt.connect();
+        Intent intent = new Intent(this, BeaconActivity.class);
+
+        intent.putExtra("device", device);
+        startActivity(intent);
+    }
+
+    private final BluetoothGattCallback mGattCallback =
+            new BluetoothGattCallback() {
+                @Override
+                public void onConnectionStateChange(BluetoothGatt gatt, int status,
+                                                    int newState) {
+                    if (newState == BluetoothProfile.STATE_CONNECTED) {
+                        Log.i(TAG, "Connected to GATT server.");
+                        Log.i(TAG, "Attempting to start service discovery:" +
+                                mBluetoothGatt.discoverServices());
+
+                    } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
+                        Log.i(TAG, "Disconnected from GATT server.");
+                    }
+                }
+
+                @Override
+                // New services discovered
+                public void onServicesDiscovered(BluetoothGatt gatt, int status) {
+                    if (status == BluetoothGatt.GATT_SUCCESS) {
+                        Log.i(TAG, "Services discovered");
+                    } else {
+                        Log.w(TAG, "onServicesDiscovered received: " + status);
+                    }
+                }
+
+                @Override
+                // Result of a characteristic read operation
+                public void onCharacteristicRead(BluetoothGatt gatt,
+                                                 BluetoothGattCharacteristic characteristic,
+                                                 int status) {
+                    if (status == BluetoothGatt.GATT_SUCCESS) {
+                        Log.i(TAG, "Characteristics read succes");
+                    }
+                }
+
+            };
 }
