@@ -34,7 +34,7 @@ import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity {
 
-    public static final String TAG = "Beacon";
+    public static final String TAG = "main";
     private BluetoothAdapter mBluetoothAdapter;
     private boolean mScanning;
     private Handler mHandler;
@@ -43,7 +43,6 @@ public class MainActivity extends AppCompatActivity {
     private ListView listView;
     private ArrayList<String> listItems;
     private ArrayAdapter<String> adapter;
-    private BluetoothGatt mBluetoothGatt;
     private ArrayList<BluetoothDevice> bluetoothDevices;
 
     @Override
@@ -138,49 +137,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void openBeacon(BluetoothDevice device){
-        mBluetoothGatt = device.connectGatt(this, false, mGattCallback);
-
-        mBluetoothGatt.connect();
         Intent intent = new Intent(this, BeaconActivity.class);
 
         intent.putExtra("device", device);
         startActivity(intent);
     }
 
-    private final BluetoothGattCallback mGattCallback =
-            new BluetoothGattCallback() {
-                @Override
-                public void onConnectionStateChange(BluetoothGatt gatt, int status,
-                                                    int newState) {
-                    if (newState == BluetoothProfile.STATE_CONNECTED) {
-                        Log.i(TAG, "Connected to GATT server.");
-                        Log.i(TAG, "Attempting to start service discovery:" +
-                                mBluetoothGatt.discoverServices());
 
-                    } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
-                        Log.i(TAG, "Disconnected from GATT server.");
-                    }
-                }
-
-                @Override
-                // New services discovered
-                public void onServicesDiscovered(BluetoothGatt gatt, int status) {
-                    if (status == BluetoothGatt.GATT_SUCCESS) {
-                        Log.i(TAG, "Services discovered");
-                    } else {
-                        Log.w(TAG, "onServicesDiscovered received: " + status);
-                    }
-                }
-
-                @Override
-                // Result of a characteristic read operation
-                public void onCharacteristicRead(BluetoothGatt gatt,
-                                                 BluetoothGattCharacteristic characteristic,
-                                                 int status) {
-                    if (status == BluetoothGatt.GATT_SUCCESS) {
-                        Log.i(TAG, "Characteristics read succes");
-                    }
-                }
-
-            };
 }
