@@ -31,7 +31,8 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".BeaconActivity"></activity>
+        <activity android:name=".BeaconActivity"
+            android:parentActivityName="com.enter.flex.MainActivity"></activity>
     </application>
 
 </manifest>

@@ -50,6 +50,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         mHandler = new Handler();
+        getSupportActionBar().setTitle("Nearby BLE Beacons");
 
         bluetoothDevices = new ArrayList<BluetoothDevice>();
         listItems = new ArrayList<String>();
